@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://vwfestmemecoin.com; connect-src 'self' wss://vwfest-holdem.onrender.com https://vwfest-holdem.onrender.com; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>VW FEST HOLD'EM — free multiplayer poker · $VWFEST Arcade Room</title>
+<meta name="description" content="VW FEST HOLD'EM: free multiplayer Texas Hold'em with air-cooled VW style. Play chips only, no cash prizes. Daily and weekly tournaments.">
+<link rel="icon" href="https://vwfestmemecoin.com/gallery/favicons/favicon.png">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="slides" aria-hidden="true"><img id="sl1" alt="" src="bg/race.jpg"><img id="sl2" alt="" src="bg/drag.jpg"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="logo" href="https://vwfest.github.io/vwfest-arcade/" rel="noopener" title="Back to the Arcade Room">← Arcade Room</a>
+  <div class="title"><b>VW FEST</b> HOLD'EM</div>
+  <div class="who">
+    <span id="conn" class="conn off" title="Connection">● offline</span>
+    <button id="btnRules" class="btn ghost sm" type="button">Rules</button>
+    <button id="btnProfile" class="btn ghost sm hidden" type="button">Profile</button>
+  </div>
+</header>
+<div class="free" role="note">FREE TO PLAY · PLAY CHIPS ONLY · NO CASH, NO PRIZES, NO REAL MONEY · $VWFEST community fun</div>
+
+<main>
+  <!-- PROFILE -->
+  <section id="scrProfile" class="screen hidden">
+    <div class="panel profile">
+      <h1>Take a seat at the<br><span>VW FEST</span> table</h1>
+      <p class="muted">No sign-up. Pick a username and a ride. Everyone starts with <b>1,000 play chips</b>.</p>
+      <label for="inName">Username <span class="muted">(3–14 letters/numbers, unique)</span></label>
+      <input id="inName" maxlength="14" autocomplete="off" spellcheck="false" placeholder="e.g. Bug Boss 74">
+      <label>Profile image</label>
+      <div id="avGrid" class="avgrid" role="radiogroup" aria-label="Choose an avatar"></div>
+      <div class="upl"><label class="btn ghost sm" for="inFile">Upload my own</label><input id="inFile" type="file" accept="image/png,image/jpeg,image/webp" class="hidden"><span id="upNote" class="muted">Resized to 96×96 on your device, max ~11 KB.</span></div>
+      <p id="profErr" class="err hidden" role="alert"></p>
+      <button id="btnGo" class="btn big" type="button">Let's play ▶</button>
+      <p class="fine">Free to play, no cash prizes. Play chips have no value and can't be cashed out. Room holds 25 players; 7 tables, 6 seats each.</p>
+    </div>
+  </section>
+
+  <!-- LOBBY -->
+  <section id="scrLobby" class="screen hidden">
+    <div class="lobbyhead">
+      <div class="me"><img id="meAv" alt="" width="44" height="44"><div><b id="meName">—</b><div class="muted"><span id="meBank">1000</span> play chips</div></div></div>
+      <div class="muted online"><b id="onlineN">0</b>/<span id="capN">25</span> in the room</div>
+    </div>
+    <div class="lobbygrid">
+      <div class="col">
+        <h2>Cash tables <small class="muted">free play chips · 6 seats each</small></h2>
+        <div id="tables" class="tables"></div>
+        <h2>Tournaments <small class="muted">opt in · all times Pacific (PT)</small></h2>
+        <div id="tourneys" class="tourneys"></div>
+      </div>
+      <aside class="col side">
+        <div class="panel"><h3>🏆 Live leaderboard <small class="muted">chips in the room</small></h3><ol id="liveBoard" class="board"></ol></div>
+        <div class="panel"><h3>🎖 Tournament winners</h3><ol id="winBoard" class="board small"></ol><h4>Most wins</h4><ol id="topWins" class="board small"></ol></div>
+        <div class="panel chatp"><h3>💬 Chat</h3><div id="chatLog" class="chatlog" aria-live="polite"></div><form id="chatForm" class="chatform" autocomplete="off"><input id="chatIn" maxlength="140" placeholder="Say something nice…"><button class="btn sm" type="submit">Send</button></form></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section id="scrTable" class="screen hidden">
+    <div class="tbar"><button id="btnLobby" class="btn ghost sm" type="button">← Lobby</button><div class="tname"><b id="tName">Table</b> <span id="tBlinds" class="muted"></span> <span id="tMeta" class="meta"></span></div><button id="btnLeave" class="btn ghost sm" type="button">Leave table</button></div>
+    <div class="tablewrap">
+      <div class="felt" id="felt">
+        <div class="rail"></div>
+        <div class="center">
+          <div class="brandmark">$VWFEST</div>
+          <div id="board" class="board-cards"></div>
+          <div id="pot" class="pot"></div>
+          <div id="phase" class="phase"></div>
+        </div>
+        <div id="seats"></div>
+      </div>
+      <div id="banner" class="banner hidden" role="status"></div>
+      <div id="controls" class="controls hidden">
+        <button id="aFold" class="btn warn" type="button">Fold</button>
+        <button id="aCall" class="btn" type="button">Check</button>
+        <div class="raisebox">
+          <div class="quick"><button id="qMin" class="btn ghost xs" type="button">Min</button><button id="qHalf" class="btn ghost xs" type="button">½ Pot</button><button id="qPot" class="btn ghost xs" type="button">Pot</button><button id="qAll" class="btn ghost xs" type="button">All-in</button></div>
+          <div class="rrow"><input id="rRange" type="range" min="0" max="100" step="1" value="0" aria-label="Raise amount"><input id="rAmt" type="number" inputmode="numeric" min="0" aria-label="Raise to"><button id="aRaise" class="btn" type="button">Raise</button></div>
+        </div>
+      </div>
+      <div id="sitOutBar" class="controls hidden"><span>You're sitting out.</span><button id="aBack" class="btn" type="button">I'm back</button></div>
+      <div class="tlow">
+        <div class="panel handlog"><h3>Hand log</h3><div id="hlog" class="hlog"></div></div>
+        <div class="panel chatp"><h3>💬 Chat</h3><div id="chatLog2" class="chatlog"></div><form id="chatForm2" class="chatform" autocomplete="off"><input id="chatIn2" maxlength="140" placeholder="Say something nice…"><button class="btn sm" type="submit">Send</button></form></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="scrFull" class="screen hidden"><div class="panel profile"><h1>Room is <span>full</span></h1><p class="muted">The room holds 25 players. Hang tight and try again in a minute.</p><button id="btnRetry" class="btn big" type="button">Try again</button></div></section>
+  <section id="scrConnecting" class="screen"><div class="panel profile"><h1>Warming up the <span>engine</span>…</h1><p id="connMsg" class="muted">Connecting to the table. The free server can take up to a minute to wake up.</p><div class="spinner"></div></div></section>
+</main>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div class="mbox"><div id="mBody"></div><button id="mClose" class="btn" type="button">OK</button></div></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<footer class="foot">Free to play · play chips only · no cash prizes · not gambling · just for fun. $VWFEST is a community-driven meme coin. Not financial advice.</footer>
+<script src="config.js"></script>
+<script src="bg.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: vwfest-holdem
+    runtime: node
+    plan: free
+    region: ohio
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20
+      - key: DB_SCHEMA
+        value: holdem
+      # Optional: Postgres connection string (same Supabase DB as guess-the-chart; tables live in their own "holdem" schema).
+      # Without it the game still works and tournaments simply live in memory (lost on restart).
+      - key: DATABASE_URL
+        sync: false

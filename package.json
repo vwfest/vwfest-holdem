@@ -1,0 +1,28 @@
+{
+  "name": "vwfest-holdem",
+  "version": "1.0.0",
+  "description": "VW FEST HOLD'EM — free multiplayer Texas Hold'em for the $VWFEST Arcade Room (play chips only, no cash)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node test/engine.cjs && node test/schedule-db.cjs && node test/e2e.cjs"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "compression": "^1.8.2",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.1",
+    "ws": "^8.22.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "private": true,
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
+    "@fontsource/anton": "^5.3.0",
+    "@fontsource/rajdhani": "^5.3.0",
+    "playwright": "^1.64.1"
+  }
+}
