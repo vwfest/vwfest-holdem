@@ -142,7 +142,7 @@ async function main() {
   const dupe = await mkPlayer(browser, 'dupe'); await dupe.page.fill('#inName', 'ana bus'); await dupe.page.click('#avGrid .av >> nth=5'); await dupe.page.click('#btnGo');
   await dupe.page.waitForFunction(() => /taken/i.test(document.getElementById('profErr').textContent), null, { timeout: 8000 }); await dupe.ctx.close();
   log('profiles (preset + resized upload), filter, unique ok');
-  const uploaded = await ps[1].page.evaluate(() => localStorage.getItem('vwfest-holdem-v1')); const ua = JSON.parse(uploaded).avatar; assert(ua.startsWith('data:image/jpeg'), 'upload resized to jpeg'); assert(ua.length < 16000, 'upload size-limited');
+  const uploaded = await ps[1].page.evaluate(() => localStorage.getItem('vwfest-holdem-v1')); const ua = JSON.parse(uploaded).avatar; assert(ua.startsWith('data:image/jpeg'), 'upload resized to jpeg'); assert(ua.length < 4200, 'upload size-limited');
 
   // lobby: 7 tables with join buttons + seat counts
   const lp = ps[0].page; await lp.waitForFunction(() => document.querySelectorAll('#tables .tcard').length === 7);

@@ -9,15 +9,17 @@ const CASH_TABLES = [
   ['Baja Bash', 10, 20], ['Split-Window Lounge', 25, 50], ['209 High Rollers', 25, 50],
 ];
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
+// Custom avatars are re-broadcast to everyone in the room, so keep them tiny (~4 KB as a data URL; the client resizes to fit).
+const AV_MAX_BYTES = 3000, AV_MAX_CHARS = 4100;
 const AV_RE = /^p:(?:[0-9]|1[0-1])$/;
 
 function validAvatar(a) {
   if (typeof a !== 'string') return null;
   if (AV_RE.test(a)) return a;
   const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(a);
-  if (!m || a.length > 16000) return null;
+  if (!m || a.length > AV_MAX_CHARS) return null;
   const buf = Buffer.from(m[2], 'base64');
-  if (buf.length < 100 || buf.length > 11500) return null;
+  if (buf.length < 100 || buf.length > AV_MAX_BYTES) return null;
   const ok = (m[1] === 'jpeg' && buf[0] === 0xff && buf[1] === 0xd8) || (m[1] === 'png' && buf.slice(0, 4).toString('hex') === '89504e47') || (m[1] === 'webp' && buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP');
   return ok ? a : null;
 }
@@ -45,7 +47,7 @@ class Room {
     const hash = sha(token); let p = this.players.get(hash);
     const name = cleanName(msg.name); const avatar = validAvatar(msg.avatar);
     if (!name) return { err: 'Pick a username of 3-14 letters/numbers (spaces, _ and - ok). Keep it clean.' };
-    if (!avatar) return { err: 'Pick an avatar (or upload a small image).' };
+    if (!avatar) return { err: 'Pick an avatar (or upload a small image, max about 3 KB).' };
     const key = name.toLowerCase(); const owner = this.byName.get(key);
     if (owner && owner !== hash) { const op = this.players.get(owner); if (op && (op.connected || Date.now() - op.lastSeen < 6 * 3600e3)) return { err: 'That username is taken, try another.' }; }
     if (!p || !p.connected) { if (this.onlineCount() >= ROOM_CAP) return { err: 'room full', full: true }; }

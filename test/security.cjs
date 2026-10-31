@@ -21,6 +21,7 @@ const until = async (c, f, ms = 12000) => { const t0 = Date.now(); while (Date.n
   let c = await open({}); ok(c.status === 403, 'WebSocket without Origin refused');
   c = await open({ origin: 'https://evil.example' }); ok(c.status === 403, 'WebSocket from foreign Origin refused');
   const hr = await fetch(B + '/api/status', { headers: { origin: 'https://evil.example' } }); ok(hr.status === 403, 'HTTP API refuses foreign Origin');
+  ok(/camera=\(\)/.test((await fetch(B + '/healthz')).headers.get('permissions-policy') || ''), 'Permissions-Policy header present');
   // --- per-IP connection cap keyed on the real client IP (default 8), not a spoofable X-Forwarded-For
   const many = []; for (let i = 0; i < 9; i++) many.push(await open({ origin: ORIGIN, 'cf-connecting-ip': '198.51.100.7', 'x-forwarded-for': `10.0.${i}.1, 203.0.113.9` }));
   ok(many.slice(0, 8).every(m => m.status === 101) && many[8].status === 429, 'ws per-IP cap holds when X-Forwarded-For is rotated');
@@ -32,7 +33,11 @@ const until = async (c, f, ms = 12000) => { const t0 = Date.now(); while (Date.n
     hello(c, n); const e = await until(c, m => m.t === 'err' && m.stage === 'hello'); ok(!!e, 'name rejected: ' + n); c.msgs.length = 0; }
   c.ws.send(JSON.stringify({ t: 'hello', token: 'short', name: 'Okname', avatar: 'p:1' })); ok(!!(await until(c, m => m.t === 'err')), 'short session token rejected'); c.msgs.length = 0;
   c.ws.send(JSON.stringify({ t: 'hello', token: tok(), name: 'Okname', avatar: 'data:image/svg+xml;base64,PHN2Zz4=' })); ok(!!(await until(c, m => m.t === 'err')), 'SVG/other data: avatar rejected'); c.msgs.length = 0;
+  const av = n => 'data:image/jpeg;base64,' + Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(n - 4, 7)]).toString('base64');
+  c.ws.send(JSON.stringify({ t: 'hello', token: tok(), name: 'BigAvatar', avatar: av(5000) })); ok(!!(await until(c, m => m.t === 'err' && m.stage === 'hello')), 'custom avatar of 5 KB refused (cap ~3 KB, it is broadcast to the room)'); c.msgs.length = 0;
+  c.ws.send(JSON.stringify({ t: 'hello', token: tok(), name: 'BigAvatar', avatar: av(11000) })); ok(!!(await until(c, m => m.t === 'err' && m.stage === 'hello')), 'custom avatar of 11 KB refused'); c.msgs.length = 0;
   c.ws.send(JSON.stringify({ t: 'act', a: 'raise', amt: 1e9 })); ok(!!(await until(c, m => m.t === 'err' && /hello/.test(m.msg))), 'actions before hello refused'); c.ws.close();
+  { const d = await open({ origin: ORIGIN, 'cf-connecting-ip': '198.51.100.24' }); d.ws.send(JSON.stringify({ t: 'hello', token: tok(), name: 'TinyAvatar', avatar: av(2800) })); ok(!!(await until(d, m => m.t === 'welcome')), 'custom avatar of 2.8 KB accepted'); d.ws.close(); }
   // --- hidden cards: opponent hole cards are never sent before showdown
   const A = await open({ origin: ORIGIN, 'cf-connecting-ip': '198.51.100.21' }), Bc = await open({ origin: ORIGIN, 'cf-connecting-ip': '198.51.100.22' });
   hello(A, 'Alice1'); hello(Bc, 'Bobby2'); await until(A, m => m.t === 'welcome'); await until(Bc, m => m.t === 'welcome');

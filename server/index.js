@@ -19,6 +19,7 @@ const app = express();
 app.set('trust proxy', 1); app.disable('x-powered-by');
 useClientIp(app);
 app.use(helmet({ contentSecurityPolicy: { useDefaults: false, directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"], baseUri: ["'none'"], formAction: ["'none'"] } }, crossOriginResourcePolicy: { policy: 'cross-origin' }, referrerPolicy: { policy: 'no-referrer' } }));
+app.use((req, res, next) => { res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()'); next(); });
 // CORS: only the allowed origins (never *)
 app.use((req, res, next) => {
   const o = req.get('origin');

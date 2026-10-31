@@ -39,10 +39,15 @@
     try {
       const bmp = await createImageBitmap(f); const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d');
       const s = Math.min(bmp.width, bmp.height); x.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, 96, 96);
-      let q = 0.82, url = '';
-      for (; q > 0.2; q -= 0.1) { url = c.toDataURL('image/jpeg', q); if (Math.floor((url.length - 23) * 3 / 4) < 10500) break; }
-      if (Math.floor((url.length - 23) * 3 / 4) >= 10500) { note.textContent = 'That image is too detailed, try another.'; return; }
-      showUploaded(url); note.textContent = 'Uploaded ✓ (resized to 96×96, ' + Math.round(url.length * 0.75 / 1024 * 10) / 10 + ' KB)';
+      // The server accepts custom avatars up to 3000 bytes (they are broadcast to the whole room): shrink size/quality until it fits.
+      const MAXB = 2900, bytes = (u) => Math.floor((u.length - 23) * 3 / 4); let url = '';
+      for (const px of [96, 80, 64, 48]) {
+        c.width = c.height = px; x.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, px, px);
+        for (let q = 0.82; q >= 0.14; q -= 0.1) { url = c.toDataURL('image/jpeg', q); if (bytes(url) < MAXB) break; }
+        if (bytes(url) < MAXB) break;
+      }
+      if (bytes(url) >= MAXB) { note.textContent = 'That image is too detailed, try another.'; return; }
+      showUploaded(url); note.textContent = 'Uploaded ✓ (resized to fit, ' + Math.round(url.length * 0.75 / 1024 * 10) / 10 + ' KB)';
     } catch { note.textContent = 'Could not read that image.'; }
   });
   function profErr(m) { const e = $('profErr'); e.textContent = m || ''; e.classList.toggle('hidden', !m); }

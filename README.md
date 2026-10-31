@@ -5,7 +5,7 @@ Free multiplayer Texas Hold'em for the **$VWFEST Arcade Room**. **Play chips onl
 * **Play:** https://vwfest.github.io/vwfest-holdem/ (static client on GitHub Pages, `docs/`)
 * **Game server:** Node 20 + Express 5 + `ws` on a Render free web service (`server/`), optional Postgres schema `holdem`.
 * **Room:** 25 players max (spectators count), 7 cash tables x 6 seats. Everyone starts with 1,000 play chips (free reload when you bust).
-* **No sign-up:** pick a username (3-14 chars, profanity filtered, unique in the room) and a VW avatar or upload a small image (resized to 96x96 JPEG on your device, <= ~11 KB).
+* **No sign-up:** pick a username (3-14 chars, profanity filtered, unique in the room) and a VW avatar or upload a small image (resized to a small JPEG on your device; the server accepts <= 3 KB because avatars are broadcast to the room).
 * **Tournaments (opt-in, America/Los_Angeles):** *Daily Cruise* every day 7:00 PM PT, *Weekly Main Event* every Saturday 6:00 PM PT. Register in the lobby; 1,000 chips each; blinds escalate every 5 min (daily) / 8 min (weekly); tables are balanced and merged to a final table; results + winners board. A tournament needs >= 2 registered players in the room; it waits up to 10 min for them, otherwise it is cancelled and the next one opens.
 * **Chat** + **live leaderboard** (chips of everyone in the room) in the lobby, chat at the table.
 
