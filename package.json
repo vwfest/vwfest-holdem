@@ -5,7 +5,7 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "test": "node test/engine.cjs && node test/schedule-db.cjs && node test/e2e.cjs"
+    "test": "node test/security.cjs && node test/engine.cjs && node test/schedule-db.cjs && node test/e2e.cjs"
   },
   "type": "commonjs",
   "dependencies": {

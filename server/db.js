@@ -1,5 +1,6 @@
 // Optional persistence for tournaments (registrations, results, winners board) in its own Postgres schema ("holdem").
 // DATABASE_URL -> Postgres; PGLITE_DIR (tests/dev) -> embedded PGlite; neither -> in-memory only (db.enabled=false).
+const pgSsl = require('./pgssl');
 const SCHEMA = (process.env.DB_SCHEMA || 'holdem').replace(/[^a-z0-9_]/gi, '');
 let q = null; const api = { enabled: false, S: SCHEMA };
 const DDL = `
@@ -8,19 +9,23 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.tournaments (id TEXT PRIMARY KEY, kind TEXT
 CREATE TABLE IF NOT EXISTS ${SCHEMA}.registrations (tid TEXT NOT NULL, hash TEXT NOT NULL, name TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (tid, hash));
 CREATE TABLE IF NOT EXISTS ${SCHEMA}.results (tid TEXT NOT NULL, place INT NOT NULL, name TEXT NOT NULL, PRIMARY KEY (tid, place))
 `;
+// RLS on, no policies: the shared Supabase REST API can never read these tables. The server role owns them and bypasses RLS.
+const RLS = ['tournaments', 'registrations', 'results'].map(t => `ALTER TABLE ${SCHEMA}.${t} ENABLE ROW LEVEL SECURITY`);
 api.init = async () => {
   const stmts = DDL.split(/;\s*\n/).map(s => s.trim()).filter(Boolean);
   if (process.env.DATABASE_URL) {
     const { Pool } = require('pg');
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3, ssl: process.env.PGSSL === 'off' ? false : { rejectUnauthorized: false } });
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3, ssl: pgSsl() });
     pool.on('error', e => console.error('pg pool error', e.message));
     q = (t, p) => pool.query(t, p);
     for (const s of stmts) await pool.query(s);
+    for (const s of RLS) await pool.query(s).catch(e => console.error('rls:', e.message)); // best effort
   } else if (process.env.PGLITE_DIR !== undefined) {
     const { PGlite } = require('@electric-sql/pglite');
     const db = new PGlite(process.env.PGLITE_DIR || undefined);
     q = (t, p) => db.query(t, p);
     for (const s of stmts) await db.exec(s);
+    for (const s of RLS) await db.exec(s);
   } else return;
   api.enabled = true;
 };

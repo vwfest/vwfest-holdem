@@ -4,6 +4,7 @@ const express = require('express');
 const helmet = require('helmet');
 const { WebSocketServer } = require('ws');
 const db = require('./db');
+const { clientIp, useClientIp } = require('./clientip');
 const { Room } = require('./room');
 const { Tournaments, KINDS } = require('./tourney');
 
@@ -16,6 +17,7 @@ const TIMING = TEST ? { actionMs: +(process.env.T_ACTION || 4000), pauseMs: 300,
 
 const app = express();
 app.set('trust proxy', 1); app.disable('x-powered-by');
+useClientIp(app);
 app.use(helmet({ contentSecurityPolicy: { useDefaults: false, directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"], baseUri: ["'none'"], formAction: ["'none'"] } }, crossOriginResourcePolicy: { policy: 'cross-origin' }, referrerPolicy: { policy: 'no-referrer' } }));
 // CORS: only the allowed origins (never *)
 app.use((req, res, next) => {
@@ -48,7 +50,7 @@ app.use((err, req, res, next) => { res.status(500).json({ error: 'server' }); })
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true, maxPayload: 20000, perMessageDeflate: false });
 const perIp = new Map();
-const ipOf = req => { const x = (req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean); return PROD && x.length ? x[x.length - 1] : req.socket.remoteAddress; };
+const ipOf = req => clientIp(req); // CF-Connecting-IP behind Render; the last X-Forwarded-For entry is the Cloudflare edge (shared by many users)
 server.on('upgrade', (req, socket, head) => {
   const reject = (c, m) => { socket.write(`HTTP/1.1 ${c} ${m}\r\nConnection: close\r\n\r\n`); socket.destroy(); };
   if (!req.url.startsWith('/ws')) return reject(404, 'Not Found');
