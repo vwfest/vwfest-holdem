@@ -10,22 +10,24 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.registrations (tid TEXT NOT NULL, hash TEXT
 CREATE TABLE IF NOT EXISTS ${SCHEMA}.results (tid TEXT NOT NULL, place INT NOT NULL, name TEXT NOT NULL, PRIMARY KEY (tid, place))
 `;
 // RLS on, no policies: the shared Supabase REST API can never read these tables. The server role owns them and bypasses RLS.
-const RLS = ['tournaments', 'registrations', 'results'].map(t => `ALTER TABLE ${SCHEMA}.${t} ENABLE ROW LEVEL SECURITY`);
+const { lockdown } = require('./lockdown');
+const TABLES = ['tournaments', 'registrations', 'results'];
 api.init = async () => {
   const stmts = DDL.split(/;\s*\n/).map(s => s.trim()).filter(Boolean);
   if (process.env.DATABASE_URL) {
     const { Pool } = require('pg');
+    console.log('[db] TLS:', await pgSsl.probe(process.env.DATABASE_URL));
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3, ssl: pgSsl() });
     pool.on('error', e => console.error('pg pool error', e.message));
     q = (t, p) => pool.query(t, p);
     for (const s of stmts) await pool.query(s);
-    for (const s of RLS) await pool.query(s).catch(e => console.error('rls:', e.message)); // best effort
+    await lockdown(x => pool.query(x), (x, p) => pool.query(x, p), SCHEMA, TABLES); // REVOKE + verified RLS; throws if not locked down
   } else if (process.env.PGLITE_DIR !== undefined) {
     const { PGlite } = require('@electric-sql/pglite');
     const db = new PGlite(process.env.PGLITE_DIR || undefined);
     q = (t, p) => db.query(t, p);
     for (const s of stmts) await db.exec(s);
-    for (const s of RLS) await db.exec(s);
+    await lockdown(x => db.exec(x), (x, p) => db.query(x, p), SCHEMA, TABLES);
   } else return;
   api.enabled = true;
 };

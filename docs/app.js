@@ -81,7 +81,9 @@
     setConn('wait', 'connecting…');
     let ws; try { ws = new WebSocket(WS_URL); } catch { return retry(); }
     S.ws = ws;
-    ws.onopen = () => { S.retry = 0; if (S.prof) sendHello(); };
+    // Free Render server sleeps when idle (~20 s cold start): say so if it has not answered after 3.5 s.
+    clearTimeout(S.wakeT); S.wakeT = setTimeout(() => { if (!S.everConnected && ws.readyState === 0) { setConn('wait', 'waking server… (up to a minute)'); const m = $('connMsg'); if (m) m.textContent = 'Waking up the free game server — this takes about 20 seconds the first time. Hang tight…'; } }, 3500);
+    ws.onopen = () => { clearTimeout(S.wakeT); S.retry = 0; if (S.prof) sendHello(); };
     ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch { return; } handle(m); };
     ws.onclose = () => { if (S.ws === ws) S.ws = null; setConn('off', 'offline'); if (!S.stopRetry) retry(); };
     ws.onerror = () => {};
